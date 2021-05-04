@@ -1,0 +1,118 @@
+version: '3.2'
+services:
+
+    brainstem:
+        ports:
+            - "5010:5010"
+        image: cloudmrhub/brainstem:stable
+        environment:
+            - CAMRIE=http://camriespinalnode:5113/efference
+            - PORT=5010
+            - TMPDIR=/apptmp
+            - STATE=brainstemstate
+            - CORTEX=https://biodimensional.com
+            
+        links:
+            - brainstemstate:brainstemstate
+            - camriespinalnode:camriespinalnode
+        volumes:
+            - type: bind
+              source: /d/tmp
+              target: /apptmp
+        depends_on:
+            - brainstemstate
+            - camriespinalnode
+
+    
+        
+    brainstemstate:
+        image: redis
+
+    camriefront:
+        image: cloudmrhub/camriefront:stable
+        ports:
+            - "5002:80"
+        environment:
+            - BACK=http://camrieback:4002
+
+##gui
+    camrieback:
+        image: cloudmrhub/camrieback:stable
+        ports:
+            - "4002:4002"
+        environment:
+            - MYSERVER=http://92.168.99.100
+            - UPLOADDIR=/apptmp
+            - BRAINSTEM=http://brainstem:5010
+            - PORT=4002
+            - APPNAME=CAMRIE
+            - STARTPAGE=http://92.168.99.100:5002/#/camrie/set #app first page pay attention!!! app/camrie
+            - PIPELINEREQUESTAPI=http://brainstem:5010/pipelines #brainstem
+            - PIPELINERETRIEVEAPI=http://brainstem:5010/pipelines #brainstem
+            - USERINFOAPI=https://biodimensional.com/api/auth/profile #cortex
+            - LOGINAPI=https://biodimensional.com/api/auth/login
+        volumes:
+            - type: bind
+              source: /d/tmp
+              target: /apptmp
+        links:
+            - brainstem:brainstem
+##cu
+    camriespinalnode:
+        image: cloudmrhub/camriespinalnode:stable
+        ports: 
+            - "5113:5113"
+        environment:
+            - TMPDIR=/apptmp
+            - PORT=5113
+            - AFFERENCE=http://brainstem:5010/afference
+            - REDISSERVER=redis://camriemusclestate:6379
+            - NAME=Dyadic Green Function Solver
+            - ID=3
+        volumes:
+            - type: bind
+              source: /d/tmp
+              target: /apptmp
+        depends_on:
+            - camriemusclestate
+        links:
+           - camriemusclestate:camriemusclestate
+
+    camriemuscleworker:
+        image: cloudmrhub/camriemuscleworker:stable
+        environment:
+            TMPDIR: /apptmp
+            REDISSERVER: redis://camriemusclestate:6379
+            C_FORCE_ROOT: "true"
+            MCR: /app/matlabcode/
+            MATLABCODEDIR: /app/matlabcode/
+            MUSCLEMEMORY: camriemusclestate
+        entrypoint: celery -A tasks worker --loglevel=info --concurrency=10 -n wkr1@hostname
+        links:
+           - camriemusclestate:camriemusclestate
+        volumes:
+            - type: bind
+              source: /d/tmp
+              target: /apptmp
+        depends_on:
+            - camriemusclestate
+
+    camriemusclestate:
+        image: redis
+
+    camriespinalinpector:
+        image: mher/flower
+        command: ["flower", "--broker=redis://camriemusclestate:6379", "--port=3333"]
+        
+        ports:
+        - "3333:3333"
+        depends_on:
+            - camriemusclestate
+        links:
+           - camriemusclestate:camriemusclestate
+
+ 
+
+
+
+
