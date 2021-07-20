@@ -23,3 +23,7 @@ there are three main groups of images here:
 - gui
   - camrieback: express backend
   - camriefront: angularjs frontend
+
+##APIs example
+
+https://www.getpostman.com/collections/f0f3f0f12ef4685d24a6
