@@ -102,7 +102,7 @@ services:
 
     camriespinalinpector:
         image: mher/flower
-        command: ["flower", "--broker=redis://camriemusclestate:6379", "--port=3333"]
+        command: ["celery", "--broker=redis://camriemusclestate:6379", "flower", "--port=3333"]
         
         ports:
         - "3333:3333"
@@ -111,8 +111,8 @@ services:
         links:
            - camriemusclestate:camriemusclestate
 
- 
 
+ 
 
 
 
